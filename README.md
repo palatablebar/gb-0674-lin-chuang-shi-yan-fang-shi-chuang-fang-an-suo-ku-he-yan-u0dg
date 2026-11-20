@@ -9,9 +9,11 @@ docker compose up --build -d
 docker compose exec -T app pytest -q
 ```
 
-访问 http://localhost:18243 。启动直接载入现场脏批。切换干净样例和旧编码样例可对照核验。清批20个虚构受试者、40次应访视及5次复检，可锁库冻结。现场脏批包含窗末偏离、缺首次访视、错误复检引用及方案不符，必须处理后才能冻结。
+访问 http://localhost:18243 。启动直接载入现场脏批。切换干净样例、旧编码样例和转中心样例可对照核验。清批20个虚构受试者、40次应访视及5次复检，可锁库冻结。现场脏批包含窗末偏离、缺首次访视、错误复检引用及方案不符，必须处理后才能冻结。转中心批演示受试者00001由01中心转往02中心：同次计划访视两家中心均回传时，按转移交接单的生效时刻裁决唯一责任中心，非责任中心原始记录保留为证据、交接重试不新增访视。
 
-各模块页面对应 `/<模块英文名>`，各模块执行入口为 `POST /api/<模块英文名>`，不传参即可独立演示。完整运行 `POST /api/runs` 支持 `dataset`（dirty/clean/legacy）、`csv_text` 与 `overrides` 参数。批次历史 `GET /api/runs`，详情 `GET /api/runs/{run_id}`。
+各模块页面对应 `/<模块英文名>`，各模块执行入口为 `POST /api/<模块英文名>`，不传参即可独立演示。完整运行 `POST /api/runs` 支持 `dataset`（dirty/clean/legacy/transfer）、`csv_text` 与 `overrides` 参数。批次历史 `GET /api/runs`，详情 `GET /api/runs/{run_id}`。
+
+中心交接裁决在采信阶段完成。CSV 末两列 `center`、`handoff` 可选（旧11列表头仍可解析，中心取上下文 `default_center`）。责任中心按受试者 `transfers` 转移事件的半开生效时刻裁决，方案选择、访视窗、偏离、复检与冻结结果全部携带 `owner_center` 与交接依据。同一交接单同中心的重试按业务指纹去重（`HANDOFF_RETRY`，不新增访视），指纹不同整组隔离（`HANDOFF_CONFLICT`）；非责任中心报送计入 `center_evidence`（`CENTER_DUPLICATE`，不阻断、不计访视、不丢原始记录）；无转移依据多中心同报（`CENTER_CONFLICT`）或责任中心缺报（`CENTER_OWNER_MISSING`）阻断锁库。冻结包含 `handoff.json` 与 `handoff_evidence.csv`，封印覆盖交接裁决。重算失败返回 `RERUN_FAILED` 且旧批次完整保留。
 
 同输入与规则版本生成相同批号，只保留一条批次。复核入口 `POST /api/runs/{run_id}/review` 提交当前 `revision`，陈旧提交409。归档包只有一个下载入口 `GET /api/export/{run_id}`，含证据和运行摘要。原始隔离在页面同屏显示。
 

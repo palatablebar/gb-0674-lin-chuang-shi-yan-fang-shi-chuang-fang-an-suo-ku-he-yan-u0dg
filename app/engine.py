@@ -6,17 +6,29 @@ from app.config import ROOT, MODULES, MAX_BYTES
 from app.errors import BusinessError
 from app.manifest import digest, make_manifest
 
+def deep_merge(base, override):
+    for key,value in override.items():
+        if isinstance(value,dict) and isinstance(base.get(key),dict):
+            deep_merge(base[key],value)
+        else:
+            base[key]=value
+    return base
+
 def evaluate(payload=None, until=7, snapshot=None):
     payload=payload or {}
     dataset=payload.get('dataset','dirty')
-    if dataset not in {'dirty','clean','legacy'}: raise BusinessError('BAD_DATASET','样例名称无效')
+    if dataset not in {'dirty','clean','legacy','transfer'}: raise BusinessError('BAD_DATASET','样例名称无效')
     if not isinstance(payload.get('overrides',{}),dict): raise BusinessError('BAD_CONTEXT','参数须为对象')
     raw=(base64.b64decode(snapshot['bytes_b64'],validate=True) if snapshot is not None else (str(payload['csv_text']).encode() if 'csv_text' in payload else (ROOT/'sample_data'/f'{dataset}.csv').read_bytes()))
     if len(raw)>MAX_BYTES: raise BusinessError('TOO_LARGE','文件超过2MB',413)
-    context=deepcopy(snapshot['context']) if snapshot is not None else json.loads((ROOT/'sample_data/context.json').read_text())
+    context=deepcopy(snapshot['context']) if snapshot is not None else json.loads((ROOT/'sample_data'/'context.json').read_text())
+    if snapshot is None:
+        override_path=ROOT/'sample_data'/f'context.{dataset}.json'
+        if override_path.exists():
+            context=deep_merge(context,json.loads(override_path.read_text()))
     context.update(deepcopy(payload.get('overrides',{})))
     start=time.perf_counter()
-    state={'raw_bytes':raw,'context':context,'records':[],'quarantine':[], 'counts':{},'views':{},'source':dataset}
+    state={'raw_bytes':raw,'context':context,'records':[],'quarantine':[], 'counts':{},'views':{},'source':dataset,'center_evidence':[],'center_blocks':[]}
     for index,key in enumerate(MODULES,1):
         if index>until: break
         import_module(f'app.modules.{key}.rules').apply(state)

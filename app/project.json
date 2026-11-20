@@ -62,6 +62,12 @@
     "deviations": "偏离",
     "retest_issues": "复检问题",
     "blocked": "阻断项",
-    "status": "状态"
+    "status": "状态",
+    "center": "报送中心",
+    "owner_center": "责任中心",
+    "handoff": "交接依据",
+    "owner_basis": "责任依据",
+    "basis": "依据说明",
+    "handoff_blocks": "交接阻断"
   }
 }

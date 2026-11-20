@@ -5,7 +5,7 @@ def calculate(row,context):
     zone=timezone(timedelta(hours=8));day=(instant(row['at']).astimezone(zone).date()-instant(row['enrolled']).astimezone(zone).date()).days
     start,end=context['plans'][row['selected_protocol']][row['visit']]
     code='IN_WINDOW' if start<=day<end else ('EARLY' if day<start else 'LATE')
-    return {'id':row['id'],'subject':row['subject'],'visit':row['visit'],'kind':row['kind'],'day':day,'start_day':start,'end_day':end,'selected_protocol':row['selected_protocol'],'code':code,'line':row['_line']}
+    return {'id':row['id'],'subject':row['subject'],'visit':row['visit'],'kind':row['kind'],'day':day,'start_day':start,'end_day':end,'selected_protocol':row['selected_protocol'],'owner_center':row.get('owner_center',''),'center':row.get('center',''),'handoff':row.get('handoff',''),'code':code,'line':row['_line']}
 
 def apply(state):
     state['windows']=[calculate(r,state['context']) for r in state['records']]

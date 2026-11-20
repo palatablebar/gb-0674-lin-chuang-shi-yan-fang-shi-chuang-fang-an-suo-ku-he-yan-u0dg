@@ -22,11 +22,11 @@ def normalize(row,context):
     value=number(row['value']);factor=context['units'].get(row['unit'])
     if factor is None:raise BusinessError('BAD_UNIT','检验单位无法换算')
     if value<0:raise BusinessError('INVALID_RANGE','检验值小于零')
-    return {**row,'at':at.isoformat(),'enrolled':enrolled.isoformat(),'revision':int(revision),'selected_protocol':chosen,'value_mg_dl':str(value*number(factor))}
+    return {**row,'at':at.isoformat(),'enrolled':enrolled.isoformat(),'revision':int(revision),'selected_protocol':chosen,'value_mg_dl':str(value*number(factor)),'owner_center':row.get('owner_center',''),'owner_basis':row.get('owner_basis','')}
 
 def apply(state):
     good=[]
     for row in state['records']:
         try:good.append(normalize(row,state['context']))
         except BusinessError as e:reject(state,row,e.code,e.message)
-    state['records']=good;state['views']['protocol']={'title':'受试者方案','rows':[{'id':r['id'],'subject':r['subject'],'visit':r['visit'],'selected_protocol':r['selected_protocol'],'at':r['at']} for r in good],'metrics':{'有效记录':len(good),'方案版本':len(state['context']['plans'])}}
+    state['records']=good;state['views']['protocol']={'title':'受试者方案','rows':[{'id':r['id'],'subject':r['subject'],'visit':r['visit'],'selected_protocol':r['selected_protocol'],'owner_center':r.get('owner_center',''),'handoff':r.get('handoff',''),'at':r['at']} for r in good],'metrics':{'有效记录':len(good),'方案版本':len(state['context']['plans'])}}
